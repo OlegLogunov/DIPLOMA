@@ -37,14 +37,14 @@ def get_all_pictures():
     return users
 
 
-def add_user(username, email, age):
-    connection = sqlite3.connect("ProdSan.db")
+def add_user(login, password):
+    connection = sqlite3.connect("IntCard.db")
     cursor = connection.cursor()
 
     cursor.execute("SELECT COUNT(*) FROM Users")
     total_us = cursor.fetchone()[0]+1
     cursor.execute(f'''
-    INSERT INTO Users VALUES('{total_us}', '{username}', '{email}', '{age}', '1000')
+    INSERT INTO Users VALUES('{total_us}', '{login}', '{password}')
     ''')
 
     connection.commit()

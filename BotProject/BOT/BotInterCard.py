@@ -1,3 +1,5 @@
+import sys
+
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
@@ -9,9 +11,10 @@ import asyncio
 
 from crud_functions import initiate_db, get_all_pictures, add_user, is_included
 
-api = ""
+api = "7594342351:AAHFSdUfGDK3F4VTsItara30erCvanOhTg4"
 bot = Bot(token=api)
 dp = Dispatcher(bot, storage=MemoryStorage())
+
 
 # Определяем состояния
 class AuthStates(StatesGroup):
@@ -24,33 +27,29 @@ kb = ReplyKeyboardMarkup(resize_keyboard=True)
 button = KeyboardButton(text='Вход')
 button2 = KeyboardButton(text='Регистрация')
 button3 = KeyboardButton(text='Информация')
+button4 = KeyboardButton(text='Завершение работы')
 kb.insert(button)
 kb.insert(button2)
 kb.insert(button3)
+kb.insert(button4)
 
+kb_p = InlineKeyboardMarkup(resize_keyboard=True)
+button_p = KeyboardButton(text='Загрузите изображение', callback_data="picture")
+button2_p = KeyboardButton(text='Завершение работы', callback_data="exit")
+kb_p.insert(button_p)
+kb_p.insert(button2_p)
 
-kb_in = InlineKeyboardMarkup(resize_keyboard=True)
-button_in = InlineKeyboardButton(text='Рассчитать норму калорий', callback_data="calories")
-button_in2 = InlineKeyboardButton(text='Формулы расчёта', callback_data="formulas")
-kb_in.insert(button_in)
-kb_in.insert(button_in2)
-
-
-kb_buy = InlineKeyboardMarkup(resize_keyboard=True)
-button_buy = InlineKeyboardButton(text='Смеситель', callback_data="product_buying")
-button_buy2 = InlineKeyboardButton(text='Полотенцесушитель', callback_data="product_buying")
-button_buy3 = InlineKeyboardButton(text='Ванна', callback_data="product_buying")
-button_buy4 = InlineKeyboardButton(text='Унитаз', callback_data="product_buying")
-kb_buy.insert(button_buy)
-kb_buy.insert(button_buy2)
-kb_buy.insert(button_buy3)
-kb_buy.insert(button_buy4)
-
+kb_c = InlineKeyboardMarkup(resize_keyboard=True)
+button_c = KeyboardButton(text='Продолжить', callback_data="picture")
+button2_c = KeyboardButton(text='Завершить', callback_data="exit")
+kb_c.insert(button_c)
+kb_c.insert(button2_c)
 
 users = get_all_pictures()
 
-
 s = 0
+
+
 @dp.message_handler(commands=["start"])
 async def start(message):
     await message.answer("Здравствуйте!", reply_markup=kb)
@@ -61,14 +60,46 @@ async def ask_for_login(message: types.Message):
     await message.answer("Введите ваш логин:")
     await AuthStates.waiting_for_login.set()
 
+
 # Общая функция для запроса пароля
 async def ask_for_password(message: types.Message):
     await message.answer("Введите ваш пароль:")
     await AuthStates.waiting_for_password.set()
 
+# Общая функция для завершения работы
+async def send_goodbye(message: types.Message):
+    await message.answer("Спасибо за использование нашего приложения. До свидания!")
+    await bot.close()  # Закрывает соединение с Telegram API
+    sys.exit()  # Завершает выполнение скрипта
+
+# Общая функция для завершения работы
+async def image_proc(message: types.Message):
+    await message.answer("Запуск процедуры обработки изображения и формирования описания с помощью ИИ")
+
+
+@dp.message_handler(text="Информация")
+async def info(message):
+    # await message.answer("Меня зовут просто Помощник. Я помогу Вам в создании карточек для интернет-магазинов")
+    await message.answer("Выберите опцию: ", reply_markup=kb_p)
+
+@dp.callback_query_handler(text="exit")
+async def info_call(call):
+    await send_goodbye(call)
+
+@dp.callback_query_handler(text="picture")
+async def work_pict(call):
+    await image_proc(call)
+    await call.message.answer("Дальнейшие действия: ", reply_markup=kb_c)
+
+@dp.message_handler(text="Завершение работы")
+async def info(message):
+    await send_goodbye(message)
+
+
 @dp.message_handler(lambda message: message.text == 'Вход')
 async def process_login(message: types.Message):
     await ask_for_login(message)
+
 
 # Добавляем обработчик для начала регистрации
 @dp.message_handler(lambda message: message.text == 'Регистрация', state='*')
@@ -76,10 +107,12 @@ async def start_registration(message: types.Message, state: FSMContext):
     await state.update_data(is_registering=True)  # Устанавливаем флаг для регистрации
     await ask_for_login(message)
 
+
 @dp.message_handler(state=AuthStates.waiting_for_login)
 async def process_login_input(message: types.Message, state: FSMContext):
     await state.update_data(login=message.text)
     await ask_for_password(message)
+
 
 @dp.message_handler(state=AuthStates.waiting_for_password)
 async def process_password_input(message: types.Message, state: FSMContext):
@@ -101,6 +134,7 @@ async def process_password_input(message: types.Message, state: FSMContext):
             await message.answer("Неверный логин или пароль. Попробуйте снова.")
             await state.finish()
 
+
 @dp.message_handler(state=AuthStates.waiting_for_password_confirmation)
 async def process_password_confirmation(message: types.Message, state: FSMContext):
     user_data = await state.get_data()
@@ -113,6 +147,8 @@ async def process_password_confirmation(message: types.Message, state: FSMContex
             # Логика для регистрации
             # Например, сохранить пользователя в базе данных
             await message.answer("Вы успешно зарегистрированы!")
+            add_user(user_data.get('login'), user_data.get('password'))
+            await message.answer(f"Добро пожаловать, {user_data.get('login')}")
         else:
             await message.answer("Такой пользователь существует. Воспользуйтесь кнопкой Вход")
     else:
@@ -121,92 +157,10 @@ async def process_password_confirmation(message: types.Message, state: FSMContex
     # Завершаем состояние
     await state.finish()
 
-# # Добавляем обработчик для начала регистрации
-# @dp.message_handler(lambda message: message.text == 'Регистрация', state='*')
-# async def start_registration(message: types.Message, state: FSMContext):
-#     await state.update_data(is_registering=True)  # Устанавливаем флаг для регистрации
-#     await ask_for_login(message)
 
-
-# @dp.message_handler(text="Регистрация")
-# async def main_menu(message):
-#     await message.answer("Выберите опцию:", reply_markup=kb_in)
-
-
-@dp.message_handler(text="Информация")
-async def info(message):
-    await message.answer("Меня зовут просто Помощник. Я помогу Вам в создании карточек для интернет-магазинов")
-
-
-class UserState(StatesGroup):
-    age = State()
-    growth = State()
-    weight = State()
-
-@dp.callback_query_handler(text="calories")
-async def set_age(call):
-    await call.message.answer("Введите свой возраст:")
-    await UserState.age.set()
-
-@dp.message_handler(state=UserState.age)
-async def set_growth(message, state):
-    await state.update_data(ag=message.text)
-    await message.answer("Введите свой рост:")
-    await UserState.growth.set()
-
-
-@dp.message_handler(state=UserState.growth)
-async def set_weight(message, state):
-    await state.update_data(grow=message.text)
-    await message.answer("Введите свой вес:")
-    await UserState.weight.set()
-
-@dp.message_handler(state=UserState.weight)
-async def send_calories(message, state):
-    await state.update_data(weig=message.text)
-    data = await state.get_data()
-    norma = int(10 * int(data['weig']) + 6.25 * int(data['grow']) - 5 * int(data['ag']) + 5)
-    await message.answer(f"Ваша норма в сутки {norma} ккал")
-    await state.finish()
-
-
-#     для мужчин: 10 х вес (кг) + 6,25 x рост (см) – 5 х возраст (г) + 5;
-
-
-class RegistrationState(StatesGroup):
-    username = State()
-    email = State()
-    age = State()
-    balance = State()
-
-@dp.message_handler(text="Регистрация")
-async def sing_up(message):
-    await message.answer("Введите имя пользователя (только латинский алфавит):")
-    await RegistrationState.username.set()
-
-@dp.message_handler(state=RegistrationState.username)
-async def set_username(message, state):
-    if is_included(message.text):
-        await message.answer("Пользователь существует, введите другое имя")
-        await RegistrationState.username.set()
-    else:
-        await state.update_data(usnam=message.text)
-        await message.answer("Введите свой email:")
-        await RegistrationState.email.set()
-
-@dp.message_handler(state=RegistrationState.email)
-async def set_email(message, state):
-    await state.update_data(em=message.text)
-    await message.answer("Введите свой возраст:")
-    await RegistrationState.age.set()
-
-@dp.message_handler(state=RegistrationState.age)
-async def set_age(message, state):
-    await state.update_data(ag=message.text)
-    data = await state.get_data()
-    add_user(data['usnam'], data['em'], data['ag'])
-    await message.answer("Регистрация прошла успешно!")
-    await state.finish()
+# @dp.message_handler(text="Добро пожаловать")
+# async def work(message):
+#     await message.answer("", reply_markup=kb_p)
 
 
 if __name__ == "__main__":
