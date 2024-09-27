@@ -11,7 +11,7 @@ import asyncio
 
 from crud_functions import initiate_db, get_all_pictures, add_user, is_included
 
-api = "7594342351:AAHFSdUfGDK3F4VTsItara30erCvanOhTg4"
+api = ""
 bot = Bot(token=api)
 dp = Dispatcher(bot, storage=MemoryStorage())
 
