@@ -11,7 +11,7 @@ import asyncio
 
 from crud_functions import initiate_db, get_all_pictures, add_user, is_included
 
-api = ""
+api = "7594342351:AAHFSdUfGDK3F4VTsItara30erCvanOhTg4"
 bot = Bot(token=api)
 dp = Dispatcher(bot, storage=MemoryStorage())
 
@@ -92,7 +92,7 @@ async def work_pict(call):
     await call.message.answer("Дальнейшие действия: ", reply_markup=kb_c)
 
 @dp.message_handler(text="Завершение работы")
-async def info(message):
+async def ex_info(message):
     await send_goodbye(message)
 
 
@@ -130,6 +130,8 @@ async def process_password_input(message: types.Message, state: FSMContext):
         # Логика для входа
         if is_included(login, password):
             await message.answer("Вы успешно вошли!")
+            await message.answer(f"Добро пожаловать, {user_data.get('login')}")
+            await message.answer("Дальнейшие действия: ", reply_markup=kb_p)
         else:
             await message.answer("Неверный логин или пароль. Попробуйте снова.")
             await state.finish()
@@ -142,13 +144,12 @@ async def process_password_confirmation(message: types.Message, state: FSMContex
     password_confirmation = message.text
 
     if password_confirmation == original_password:
-        # Логика для проверки существования логина
-        if not is_included(user_data.get('login'), user_data.get('password')):  # Проверяем, существует ли логин
-            # Логика для регистрации
-            # Например, сохранить пользователя в базе данных
+        # Логика для проверки существования логина и пароля
+        if not is_included(user_data.get('login'), user_data.get('password')):  # Проверяем, существует ли логин и пароль
             await message.answer("Вы успешно зарегистрированы!")
             add_user(user_data.get('login'), user_data.get('password'))
             await message.answer(f"Добро пожаловать, {user_data.get('login')}")
+            await message.answer("Дальнейшие действия: ", reply_markup=kb_p)
         else:
             await message.answer("Такой пользователь существует. Воспользуйтесь кнопкой Вход")
     else:
