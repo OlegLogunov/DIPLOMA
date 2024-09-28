@@ -8,7 +8,7 @@ from PIL import Image
 import requests
 from io import BytesIO
 
-API_TOKEN = '7594342351:AAHFSdUfGDK3F4VTsItara30erCvanOhTg4'
+API_TOKEN = ''
 
 # Настройка логирования 
 logging.basicConfig(level=logging.INFO)
