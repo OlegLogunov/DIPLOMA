@@ -11,6 +11,8 @@ import asyncio
 
 from crud_functions import initiate_db, get_all_pictures, add_user, is_included
 
+from GigaChat1 import image_proc
+
 api = ""
 bot = Bot(token=api)
 dp = Dispatcher(bot, storage=MemoryStorage())
@@ -21,6 +23,9 @@ class AuthStates(StatesGroup):
     waiting_for_login = State()
     waiting_for_password = State()
     waiting_for_password_confirmation = State()
+
+class KindImg(StatesGroup):
+    waiting_for_kind_of_img = State()
 
 
 kb = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -34,14 +39,14 @@ kb.insert(button3)
 kb.insert(button4)
 
 kb_p = InlineKeyboardMarkup(resize_keyboard=True)
-button_p = KeyboardButton(text='Загрузите изображение', callback_data="picture")
-button2_p = KeyboardButton(text='Завершение работы', callback_data="exit")
+button_p = InlineKeyboardButton(text='Загрузите изображение', callback_data="picture")
+button2_p = InlineKeyboardButton(text='Завершение работы', callback_data="exit")
 kb_p.insert(button_p)
 kb_p.insert(button2_p)
 
 kb_c = InlineKeyboardMarkup(resize_keyboard=True)
-button_c = KeyboardButton(text='Продолжить', callback_data="picture")
-button2_c = KeyboardButton(text='Завершить', callback_data="exit")
+button_c = InlineKeyboardButton(text='Продолжить', callback_data="picture")
+button2_c = InlineKeyboardButton(text='Завершить', callback_data="exit")
 kb_c.insert(button_c)
 kb_c.insert(button2_c)
 
@@ -72,10 +77,6 @@ async def send_goodbye(message: types.Message):
     await bot.close()  # Закрывает соединение с Telegram API
     sys.exit()  # Завершает выполнение скрипта
 
-# Общая функция для завершения работы
-async def image_proc(message: types.Message):
-    await message.answer("Запуск процедуры обработки изображения и формирования описания с помощью ИИ")
-
 
 @dp.message_handler(text="Информация")
 async def info(message):
@@ -86,10 +87,6 @@ async def info(message):
 async def info_call(call):
     await send_goodbye(call)
 
-@dp.callback_query_handler(text="picture")
-async def work_pict(call):
-    await image_proc(call)
-    await call.message.answer("Дальнейшие действия: ", reply_markup=kb_c)
 
 @dp.message_handler(text="Завершение работы")
 async def ex_info(message):
@@ -134,7 +131,7 @@ async def process_password_input(message: types.Message, state: FSMContext):
             await message.answer("Дальнейшие действия: ", reply_markup=kb_p)
         else:
             await message.answer("Неверный логин или пароль. Попробуйте снова.")
-            await state.finish()
+            # await state.finish()
 
 
 @dp.message_handler(state=AuthStates.waiting_for_password_confirmation)
@@ -156,7 +153,26 @@ async def process_password_confirmation(message: types.Message, state: FSMContex
         await message.answer("Пароли не совпадают. Попробуйте снова.")
 
     # Завершаем состояние
-    await state.finish()
+    # await state.finish()
+
+
+#
+
+@dp.callback_query_handler(text="picture")
+async def work_pict(call: types.CallbackQuery):
+    print("Обработчик picture вызван")  # Логирование
+    await call.message.answer("Какое изображение для описания загружаем?: ")
+    await KindImg.waiting_for_kind_of_img.set()
+
+@dp.message_handler(state=KindImg.waiting_for_kind_of_img)
+async def process_image_kind(message: types.Message, state: FSMContext):
+    user_input = message.text  # Получаем текст от пользователя
+    await message.answer(f"Вы ввели: {user_input}")
+    # cont = await image_proc(user_input)
+    # await message.answer(f"Описание товара: {cont}")
+    await message.answer("Дальнейшие действия: ", reply_markup=kb_c)
+
+#
 
 
 # @dp.message_handler(text="Добро пожаловать")
