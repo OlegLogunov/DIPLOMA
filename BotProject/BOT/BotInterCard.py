@@ -1,3 +1,4 @@
+import logging
 import sys
 
 from aiogram import Bot, Dispatcher, executor, types
@@ -12,6 +13,8 @@ import asyncio
 from crud_functions import initiate_db, get_all_pictures, add_user, is_included
 
 from GigaChat1 import image_proc
+
+logging.basicConfig(level=logging.INFO)
 
 api = ""
 bot = Bot(token=api)
@@ -43,59 +46,59 @@ button_p = InlineKeyboardButton(text='Загрузите изображение'
 button2_p = InlineKeyboardButton(text='Завершение работы', callback_data="exit")
 kb_p.insert(button_p)
 kb_p.insert(button2_p)
+print("0")
 
-kb_c = InlineKeyboardMarkup(resize_keyboard=True)
-button_c = InlineKeyboardButton(text='Продолжить', callback_data="picture")
-button2_c = InlineKeyboardButton(text='Завершить', callback_data="exit")
-kb_c.insert(button_c)
-kb_c.insert(button2_c)
 
 users = get_all_pictures()
 
-s = 0
+
+log = ""
 
 
 @dp.message_handler(commands=["start"])
 async def start(message):
     await message.answer("Здравствуйте!", reply_markup=kb)
+    print("1")
 
 
 # Общая функция для запроса логина
 async def ask_for_login(message: types.Message):
     await message.answer("Введите ваш логин:")
     await AuthStates.waiting_for_login.set()
+    print("2")
 
 
 # Общая функция для запроса пароля
 async def ask_for_password(message: types.Message):
     await message.answer("Введите ваш пароль:")
     await AuthStates.waiting_for_password.set()
+    print("3")
 
 # Общая функция для завершения работы
 async def send_goodbye(message: types.Message):
     await message.answer("Спасибо за использование нашего приложения. До свидания!")
     await bot.close()  # Закрывает соединение с Telegram API
     sys.exit()  # Завершает выполнение скрипта
+    print("4")
 
 
 @dp.message_handler(text="Информация")
 async def info(message):
-    # await message.answer("Меня зовут просто Помощник. Я помогу Вам в создании карточек для интернет-магазинов")
-    await message.answer("Выберите опцию: ", reply_markup=kb_p)
-
-@dp.callback_query_handler(text="exit")
-async def info_call(call):
-    await send_goodbye(call)
+    await message.answer("Меня зовут просто Помощник. Я помогу Вам в создании карточек для интернет-магазинов")
+    print("5")
 
 
 @dp.message_handler(text="Завершение работы")
 async def ex_info(message):
     await send_goodbye(message)
+    print("7")
 
 
 @dp.message_handler(lambda message: message.text == 'Вход')
 async def process_login(message: types.Message):
     await ask_for_login(message)
+    global log
+    print("8")
 
 
 # Добавляем обработчик для начала регистрации
@@ -103,6 +106,7 @@ async def process_login(message: types.Message):
 async def start_registration(message: types.Message, state: FSMContext):
     await state.update_data(is_registering=True)  # Устанавливаем флаг для регистрации
     await ask_for_login(message)
+
 
 
 @dp.message_handler(state=AuthStates.waiting_for_login)
@@ -128,11 +132,13 @@ async def process_password_input(message: types.Message, state: FSMContext):
         if is_included(login, password):
             await message.answer("Вы успешно вошли!")
             await message.answer(f"Добро пожаловать, {user_data.get('login')}")
+            await state.finish()
             await message.answer("Дальнейшие действия: ", reply_markup=kb_p)
         else:
             await message.answer("Неверный логин или пароль. Попробуйте снова.")
-            # await state.finish()
+            await state.finish()
 
+    print("9")
 
 @dp.message_handler(state=AuthStates.waiting_for_password_confirmation)
 async def process_password_confirmation(message: types.Message, state: FSMContext):
@@ -146,6 +152,7 @@ async def process_password_confirmation(message: types.Message, state: FSMContex
             await message.answer("Вы успешно зарегистрированы!")
             add_user(user_data.get('login'), user_data.get('password'))
             await message.answer(f"Добро пожаловать, {user_data.get('login')}")
+            await state.finish()
             await message.answer("Дальнейшие действия: ", reply_markup=kb_p)
         else:
             await message.answer("Такой пользователь существует. Воспользуйтесь кнопкой Вход")
@@ -153,16 +160,16 @@ async def process_password_confirmation(message: types.Message, state: FSMContex
         await message.answer("Пароли не совпадают. Попробуйте снова.")
 
     # Завершаем состояние
-    # await state.finish()
+    await state.finish()
+    print("10")
 
-
-#
 
 @dp.callback_query_handler(text="picture")
 async def work_pict(call: types.CallbackQuery):
     print("Обработчик picture вызван")  # Логирование
     await call.message.answer("Какое изображение для описания загружаем?: ")
     await KindImg.waiting_for_kind_of_img.set()
+    print("12")
 
 @dp.message_handler(state=KindImg.waiting_for_kind_of_img)
 async def process_image_kind(message: types.Message, state: FSMContext):
@@ -170,14 +177,15 @@ async def process_image_kind(message: types.Message, state: FSMContext):
     await message.answer(f"Вы ввели: {user_input}")
     # cont = await image_proc(user_input)
     # await message.answer(f"Описание товара: {cont}")
-    await message.answer("Дальнейшие действия: ", reply_markup=kb_c)
+    await state.finish()
+    await message.answer("Дальнейшие действия: ", reply_markup=kb_p)
+    print("13")
 
 #
-
-
-# @dp.message_handler(text="Добро пожаловать")
-# async def work(message):
-#     await message.answer("", reply_markup=kb_p)
+@dp.callback_query_handler(text="exit")
+async def info_call(call):
+    await send_goodbye(call)
+    print("6")
 
 
 if __name__ == "__main__":
