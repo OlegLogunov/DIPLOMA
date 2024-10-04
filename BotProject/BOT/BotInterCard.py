@@ -1,3 +1,4 @@
+import logging
 import sys
 
 from aiogram import Bot, Dispatcher, executor, types
@@ -13,7 +14,9 @@ from crud_functions import initiate_db, get_all_pictures, add_user, is_included
 
 from GigaChat1 import image_proc
 
-api = ""
+logging.basicConfig(level=logging.INFO)
+
+api = "7594342351:AAHFSdUfGDK3F4VTsItara30erCvanOhTg4"
 bot = Bot(token=api)
 dp = Dispatcher(bot, storage=MemoryStorage())
 
@@ -23,6 +26,7 @@ class AuthStates(StatesGroup):
     waiting_for_login = State()
     waiting_for_password = State()
     waiting_for_password_confirmation = State()
+
 
 class KindImg(StatesGroup):
     waiting_for_kind_of_img = State()
@@ -44,15 +48,9 @@ button2_p = InlineKeyboardButton(text='Завершение работы', callb
 kb_p.insert(button_p)
 kb_p.insert(button2_p)
 
-kb_c = InlineKeyboardMarkup(resize_keyboard=True)
-button_c = InlineKeyboardButton(text='Продолжить', callback_data="picture")
-button2_c = InlineKeyboardButton(text='Завершить', callback_data="exit")
-kb_c.insert(button_c)
-kb_c.insert(button2_c)
-
 users = get_all_pictures()
 
-s = 0
+log = ""
 
 
 @dp.message_handler(commands=["start"])
@@ -71,6 +69,7 @@ async def ask_for_password(message: types.Message):
     await message.answer("Введите ваш пароль:")
     await AuthStates.waiting_for_password.set()
 
+
 # Общая функция для завершения работы
 async def send_goodbye(message: types.Message):
     await message.answer("Спасибо за использование нашего приложения. До свидания!")
@@ -80,12 +79,7 @@ async def send_goodbye(message: types.Message):
 
 @dp.message_handler(text="Информация")
 async def info(message):
-    # await message.answer("Меня зовут просто Помощник. Я помогу Вам в создании карточек для интернет-магазинов")
-    await message.answer("Выберите опцию: ", reply_markup=kb_p)
-
-@dp.callback_query_handler(text="exit")
-async def info_call(call):
-    await send_goodbye(call)
+    await message.answer("Меня зовут просто Помощник. Я помогу Вам в создании карточек для интернет-магазинов")
 
 
 @dp.message_handler(text="Завершение работы")
@@ -96,6 +90,7 @@ async def ex_info(message):
 @dp.message_handler(lambda message: message.text == 'Вход')
 async def process_login(message: types.Message):
     await ask_for_login(message)
+    global log
 
 
 # Добавляем обработчик для начала регистрации
@@ -128,10 +123,11 @@ async def process_password_input(message: types.Message, state: FSMContext):
         if is_included(login, password):
             await message.answer("Вы успешно вошли!")
             await message.answer(f"Добро пожаловать, {user_data.get('login')}")
+            await state.finish()
             await message.answer("Дальнейшие действия: ", reply_markup=kb_p)
         else:
             await message.answer("Неверный логин или пароль. Попробуйте снова.")
-            # await state.finish()
+            await state.finish()
 
 
 @dp.message_handler(state=AuthStates.waiting_for_password_confirmation)
@@ -142,10 +138,12 @@ async def process_password_confirmation(message: types.Message, state: FSMContex
 
     if password_confirmation == original_password:
         # Логика для проверки существования логина и пароля
-        if not is_included(user_data.get('login'), user_data.get('password')):  # Проверяем, существует ли логин и пароль
+        if not is_included(user_data.get('login'),
+                           user_data.get('password')):  # Проверяем, существует ли логин и пароль
             await message.answer("Вы успешно зарегистрированы!")
             add_user(user_data.get('login'), user_data.get('password'))
             await message.answer(f"Добро пожаловать, {user_data.get('login')}")
+            await state.finish()
             await message.answer("Дальнейшие действия: ", reply_markup=kb_p)
         else:
             await message.answer("Такой пользователь существует. Воспользуйтесь кнопкой Вход")
@@ -153,10 +151,8 @@ async def process_password_confirmation(message: types.Message, state: FSMContex
         await message.answer("Пароли не совпадают. Попробуйте снова.")
 
     # Завершаем состояние
-    # await state.finish()
+    await state.finish()
 
-
-#
 
 @dp.callback_query_handler(text="picture")
 async def work_pict(call: types.CallbackQuery):
@@ -164,20 +160,20 @@ async def work_pict(call: types.CallbackQuery):
     await call.message.answer("Какое изображение для описания загружаем?: ")
     await KindImg.waiting_for_kind_of_img.set()
 
+
 @dp.message_handler(state=KindImg.waiting_for_kind_of_img)
 async def process_image_kind(message: types.Message, state: FSMContext):
     user_input = message.text  # Получаем текст от пользователя
     await message.answer(f"Вы ввели: {user_input}")
-    # cont = await image_proc(user_input)
-    # await message.answer(f"Описание товара: {cont}")
-    await message.answer("Дальнейшие действия: ", reply_markup=kb_c)
+    cont = await image_proc(user_input)
+    await message.answer(f"Описание товара: {cont}")
+    await state.finish()
+    await message.answer("Дальнейшие действия: ", reply_markup=kb_p)
 
-#
 
-
-# @dp.message_handler(text="Добро пожаловать")
-# async def work(message):
-#     await message.answer("", reply_markup=kb_p)
+@dp.callback_query_handler(text="exit")
+async def info_call(call):
+    await send_goodbye(call)
 
 
 if __name__ == "__main__":
