@@ -31,7 +31,7 @@ prompt = {
 url = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
 headers = {
     "Content-Type": "application/json",
-    "Authorization": "Api-Key <AQVNw2xKDS92B4g_J0IC5rsvGJ6JQk6pAD5E76j_>"
+    "Authorization": "Api-Key <>"
 }
 
 response = requests.post(url, headers=headers, json=prompt)
