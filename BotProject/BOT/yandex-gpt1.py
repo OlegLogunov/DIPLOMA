@@ -1,7 +1,7 @@
 import requests
 
 prompt = {
-    "modelUri": "gpt://<ajej952ui67n2bkd5omp>/yandexgpt-lite",
+    "modelUri": "gpt://<>/yandexgpt-lite",
     "completionOptions": {
         "stream": False,
         "temperature": 0.6,
@@ -39,5 +39,3 @@ result = response.text
 print(result)
 
 
-# aje3dh50qbrm0u43u9q2
-# AQVNw2xKDS92B4g_J0IC5rsvGJ6JQk6pAD5E76j_
