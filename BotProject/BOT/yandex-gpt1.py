@@ -1,7 +1,7 @@
 import requests
 
 prompt = {
-    "modelUri": "gpt://<ajej952ui67n2bkd5omp>/yandexgpt-lite",
+    "modelUri": "gpt://<>/yandexgpt-lite",
     "completionOptions": {
         "stream": False,
         "temperature": 0.6,
@@ -31,7 +31,7 @@ prompt = {
 url = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
 headers = {
     "Content-Type": "application/json",
-    "Authorization": "Api-Key <AQVNw2xKDS92B4g_J0IC5rsvGJ6JQk6pAD5E76j_>"
+    "Authorization": "Api-Key <>"
 }
 
 response = requests.post(url, headers=headers, json=prompt)
@@ -39,5 +39,3 @@ result = response.text
 print(result)
 
 
-# aje3dh50qbrm0u43u9q2
-# AQVNw2xKDS92B4g_J0IC5rsvGJ6JQk6pAD5E76j_
