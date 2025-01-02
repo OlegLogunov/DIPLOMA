@@ -1,7 +1,7 @@
 import requests
 
    # Замените 'YOUR_API_KEY' на ваш реальный API-ключ
-API_KEY = 'AQVN1drN9NN2eKHXPELkO3dE9nVbixtPK22IB2R-'
+API_KEY = ''
 API_URL = 'https://api.yandex.cloud.ai/gpt/v1/complete'  # Убедитесь, что это правильный URL
 
 headers = {
