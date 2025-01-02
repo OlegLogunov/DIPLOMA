@@ -21,7 +21,7 @@ def gpt(auth_headers):
 
 if __name__ == "__main__":
 
-    api_key = 'AQVNyCGUVN-U5SEcXBSA7b47Akl65eRYOlbNOcOp'
+    api_key = ''
     headers = {
         'Authorization': f'Api-Key {api_key}',
     }
